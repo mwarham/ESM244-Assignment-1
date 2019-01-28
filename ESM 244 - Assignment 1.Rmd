@@ -13,10 +13,39 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Task 1: Space 
 ```{r load data}
 
+library(tidyverse)
+library(dplyr)
+
 launches <- read.csv("launches.csv")
 agencies <- read.csv("agencies.csv")
 View(launches)
 View(agencies)
+
+#wine_new <- wine %>% 
+  #select(country, province, winery, region_1, points, price) %>% 
+  #rename(state = province) %>% 
+  #filter(state == "California" | state == "Oregon" | state == "Washington") %>% 
+  #mutate(ppd = round(points/price,2)) %>% # points per dollar!
+  #arrange(-ppd)
+
+launches_tidy <- launches %>% 
+  select(launch_year, state_code, category, agency_type) %>% 
+  group_by(agency_type, launch_year) %>% 
+  tally() 
+  #rename(n="Number of Launches")
+  
+
+ggplot(launches_tidy, aes(x = launch_year)) +
+  geom_histogram(aes(fill = agency_type))+
+  facet_wrap(~agency_type, scales = "free")
+
+ggplot(launches_tidy, aes(x = launch_year, y = n)) +
+  geom_point(aes( color = agency_type))+
+  theme_light()
+
+#agencies_tidy <- agencies %>% 
+  #select(agency, count, )
+  
 
 ```
 
@@ -24,8 +53,62 @@ View(agencies)
 
 ```{r load data}
 
-nutrients <- read.csv("usda_nutrients.csv")
+nutrients <- read.csv("usda_nutrients.csv") %>% 
+  filter(FoodGroup == "Vegetables and Vegetable Products" | FoodGroup == "Fruits and Fruit Juices") %>% 
+  filter(str_detect(ShortDescrip, "RAW"))
+
+#str_detect(ShortDescript , "RAW")
+
+
 View(nutrients)
+
+
+
+```
+
+## PCA
+
+```{r Nutrients PCA}
+
+nutrient_pca <- prcomp(nutrients[9:30], scale = TRUE)
+summary(nutrient_pca)
+
+# ggbi plot
+
+ggbiplot(nutrient_pca, repel = TRUE)
+
+fviz_pca_biplot(nutrient_pca,repel = TRUE,
+                col.var = "contrib",
+                label = "true")
+                #habillage = nutrients$FoodGroup, # color by groups
+                #palette = c("#00AFBB", "#E7B800"))
+                #addEllipses = TRUE, # Concentration ellipses
+                #gradient.cols = c("blue", "red"))
+
+
+
+
+wb_pca <- prcomp(wb_10[4:8], scale = TRUE)
+summary(wb_pca) # Explore the eigenvectors!
+
+# ggbiplot for visualization
+ggbiplot(wb_pca, labels = wb_10$name, groups = wb_10$region) +
+  theme_bw()
+  
+# Alternatively, with factominer fviz functions: 
+  
+#fviz_pca_biplot(wb_pca,
+                label = "none",
+                col.var = "contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07")
+)
+
+fviz_pca_ind(wb_pca,
+             col.ind = "cos2", 
+             gradient.cols = c("orange", "magenta", "blueviolet"),
+             repel = TRUE
+             )
+
 
 ```
 
