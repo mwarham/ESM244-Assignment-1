@@ -10,42 +10,41 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+
+
 ## Task 1: Space 
 ```{r load data}
 
 library(tidyverse)
 library(dplyr)
+library(ggplot2)
 
 launches <- read.csv("launches.csv")
 agencies <- read.csv("agencies.csv")
-View(launches)
-View(agencies)
+#View(launches)
+#View(agencies)
 
-#wine_new <- wine %>% 
-  #select(country, province, winery, region_1, points, price) %>% 
-  #rename(state = province) %>% 
-  #filter(state == "California" | state == "Oregon" | state == "Washington") %>% 
-  #mutate(ppd = round(points/price,2)) %>% # points per dollar!
-  #arrange(-ppd)
+#Wrangle Data
 
 launches_tidy <- launches %>% 
   select(launch_year, state_code, category, agency_type) %>% 
-  group_by(agency_type, launch_year) %>% 
+  group_by(agency_type, launch_year, category) %>% 
+  rename("Category" = category) %>% 
+  rename("Agency" = agency_type) %>% 
   tally() 
-  #rename(n="Number of Launches")
   
+  
+#Graph Launches
 
-ggplot(launches_tidy, aes(x = launch_year)) +
-  geom_histogram(aes(fill = agency_type))+
-  facet_wrap(~agency_type, scales = "free")
-
-ggplot(launches_tidy, aes(x = launch_year, y = n)) +
-  geom_point(aes( color = agency_type))+
+ggplot(launches_tidy, aes(x = launch_year, y = n, group = Category)) +
+  geom_point(aes(shape = Category, col = Agency)) +
+  xlab("Launch Year")+
+  ylab("Number of Launches")+
+  ggtitle("Launches by Year, Agency, and Success vs Failure 1957- 2018")+
   theme_light()
 
-#agencies_tidy <- agencies %>% 
-  #select(agency, count, )
   
+ 
 
 ```
 
@@ -53,14 +52,13 @@ ggplot(launches_tidy, aes(x = launch_year, y = n)) +
 
 ```{r load data}
 
-nutrients <- read.csv("usda_nutrients.csv") %>% 
+nutrientsnew <- read.csv("usda_nutrients.csv") %>% 
   filter(FoodGroup == "Vegetables and Vegetable Products" | FoodGroup == "Fruits and Fruit Juices") %>% 
   filter(str_detect(ShortDescrip, "RAW"))
 
-#str_detect(ShortDescript , "RAW")
 
 
-View(nutrients)
+View(nutrientsnew)
 
 
 
@@ -70,17 +68,29 @@ View(nutrients)
 
 ```{r Nutrients PCA}
 
-nutrient_pca <- prcomp(nutrients[9:30], scale = TRUE)
+nutrient_pca <- prcomp(nutrientsnew[9:30], scale = TRUE)
 summary(nutrient_pca)
 
-# ggbi plot
 
-ggbiplot(nutrient_pca, repel = TRUE)
+library(factoextra)
 
-fviz_pca_biplot(nutrient_pca,repel = TRUE,
-                col.var = "contrib",
-                label = "true")
-                #habillage = nutrients$FoodGroup, # color by groups
+
+#fviz_pca_var(nutrient_pca, col.var = "contrib",
+             #gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+            # repel = TRUE)
+
+# Contributions of variables to PC1
+fviz_contrib(nutrient_pca, choice = "var", axes = 1, top = 10)
+# Contributions of variables to PC2
+fviz_contrib(nutrient_pca, choice = "var", axes = 2, top = 10)
+
+#Biplot with variables and observations
+
+fviz_pca_biplot(nutrient_pca, repel = TRUE,
+                col.var = "black",
+                gradient.cols = c("#00AFBB", "#E7B800"),
+                label = "var",
+                habillage = nutrientsnew$FoodGroup) # color by groups
                 #palette = c("#00AFBB", "#E7B800"))
                 #addEllipses = TRUE, # Concentration ellipses
                 #gradient.cols = c("blue", "red"))
@@ -88,26 +98,26 @@ fviz_pca_biplot(nutrient_pca,repel = TRUE,
 
 
 
-wb_pca <- prcomp(wb_10[4:8], scale = TRUE)
-summary(wb_pca) # Explore the eigenvectors!
+#wb_pca <- prcomp(wb_10[4:8], scale = TRUE)
+#summary(wb_pca) # Explore the eigenvectors!
 
 # ggbiplot for visualization
-ggbiplot(wb_pca, labels = wb_10$name, groups = wb_10$region) +
-  theme_bw()
+#ggbiplot(wb_pca, labels = wb_10$name, groups = wb_10$region) +
+  #theme_bw()
   
 # Alternatively, with factominer fviz functions: 
   
 #fviz_pca_biplot(wb_pca,
-                label = "none",
-                col.var = "contrib",
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07")
-)
+                #label = "none",
+               # col.var = "contrib",
+            # gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07")
+#)
 
-fviz_pca_ind(wb_pca,
-             col.ind = "cos2", 
-             gradient.cols = c("orange", "magenta", "blueviolet"),
-             repel = TRUE
-             )
+#fviz_pca_ind(wb_pca,
+            # col.ind = "cos2", 
+            # gradient.cols = c("orange", "magenta", "blueviolet"),
+            # repel = TRUE
+            # )
 
 
 ```
